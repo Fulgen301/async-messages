@@ -1,0 +1,29 @@
+[package]
+name = "async-messages"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nt-user-call = { path = "../ntusercall" }
+
+[dependencies.windows]
+version = "0.59"
+features = [
+    "Win32_Devices_Display",
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_IO",
+    "Win32_System_LibraryLoader",
+    "Win32_System_StationsAndDesktops",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Wdk_Foundation",
+    "Wdk_System_SystemServices",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging"
+]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+futures-testing = { git = "https://github.com/conradludgate/futures-testing", version = "0.1.0" }
