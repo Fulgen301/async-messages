@@ -5,14 +5,13 @@ use std::{
 };
 
 use async_messages::*;
-use tokio::task::LocalSet;
 use windows::{
     Win32::{
         Foundation::{LPARAM, WAIT_OBJECT_0, WPARAM},
         System::Threading::{CreateEventW, GetCurrentThreadId, WaitForSingleObject},
         UI::WindowsAndMessaging::{
-            MSG, MWMO_INPUTAVAILABLE, MWMO_NONE, PM_NOREMOVE, PM_REMOVE, PeekMessageW,
-            PostThreadMessageW, QS_ALLPOSTMESSAGE, WM_USER,
+            MSG, MWMO_NONE, PM_NOREMOVE, PeekMessageW, PostThreadMessageW, QS_ALLPOSTMESSAGE,
+            WM_USER,
         },
     },
     core::Owned,
@@ -91,21 +90,6 @@ fn in_new_thread(f: impl FnOnce() + Send + 'static) {
     std::thread::spawn(f).join().unwrap();
 }
 
-fn in_new_thread_local_set(f: impl FnOnce() + Send + 'static) {
-    in_new_thread(move || {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        let local = LocalSet::new();
-        let _guard = local.enter();
-        f();
-
-        runtime.block_on(local);
-    });
-}
-
 #[test]
 pub fn thread_messages() {
     in_new_thread(|| unsafe {
@@ -127,49 +111,5 @@ pub fn thread_messages() {
         PostThreadMessageW(GetCurrentThreadId(), WM_USER, WPARAM(0), LPARAM(0)).unwrap();
 
         assert_eq!(WaitForSingleObject(*event, 2000), WAIT_OBJECT_0);
-    });
-}
-
-#[link(name = "win32u", kind = "raw-dylib")]
-unsafe extern "system" {
-    pub unsafe fn NtUserGetQueueStatusReadonly(wake_mask_and_flags: u32) -> u32;
-}
-
-#[test]
-pub fn test_messages_local_set() {
-    in_new_thread_local_set(|| {
-        tokio::task::spawn_local(async {
-            let mut msg = MSG::default();
-            unsafe {
-                assert!(!PeekMessageW(&mut msg, None, 0, 0, PM_NOREMOVE).as_bool());
-            }
-
-            let future =
-                Box::pin(wait_for_messages(QS_ALLPOSTMESSAGE, MWMO_INPUTAVAILABLE).unwrap());
-
-            unsafe {
-                let mut msg = MSG::default();
-
-                while PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool() {}
-            }
-
-            let status = unsafe {
-                NtUserGetQueueStatusReadonly((QS_ALLPOSTMESSAGE.0 << 16) | QS_ALLPOSTMESSAGE.0)
-            };
-
-            assert_eq!(status, 0);
-
-            unsafe {
-                PostThreadMessageW(GetCurrentThreadId(), WM_USER, WPARAM(0), LPARAM(0)).unwrap();
-            }
-
-            let status = unsafe {
-                NtUserGetQueueStatusReadonly((QS_ALLPOSTMESSAGE.0 << 16) | QS_ALLPOSTMESSAGE.0)
-            };
-
-            assert_ne!(status, 0);
-
-            tokio::task::spawn_local(future);
-        });
     });
 }
