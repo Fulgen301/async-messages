@@ -9,5 +9,5 @@ use windows::{
 pub unsafe fn get_instance_handle(
     lpmodulename: impl Param<PCWSTR>,
 ) -> windows::core::Result<HINSTANCE> {
-    GetModuleHandleW(lpmodulename).map(|module| HINSTANCE(module.0))
+    unsafe { GetModuleHandleW(lpmodulename) }.map(|module| HINSTANCE(module.0))
 }

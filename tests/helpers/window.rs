@@ -30,7 +30,7 @@ impl Deref for OwnedHWND {
 impl windows::core::Free for OwnedHWND {
     unsafe fn free(&mut self) {
         if self.hwnd != HWND::default() {
-            DestroyWindow(self.hwnd).unwrap();
+            unsafe { DestroyWindow(self.hwnd) }.unwrap();
         }
     }
 }
@@ -61,7 +61,7 @@ impl From<WindowClass> for PCWSTR {
 impl windows::core::Free for WindowClass {
     unsafe fn free(&mut self) {
         if self.0 != 0 {
-            let _ = UnregisterClassW(PCWSTR(self.0 as _), None);
+            let _ = unsafe { UnregisterClassW(PCWSTR(self.0 as _), None) };
         }
     }
 }
@@ -73,10 +73,10 @@ unsafe extern "system" fn default_window_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     if msg == WM_CLOSE {
-        PostQuitMessage(0);
+        unsafe { PostQuitMessage(0) };
     }
 
-    DefWindowProcW(hwnd, msg, wparam, lparam)
+    unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
 }
 
 pub fn register_window_class(
