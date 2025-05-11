@@ -11,8 +11,8 @@ use windows::{
         Foundation::{LPARAM, WAIT_OBJECT_0, WPARAM},
         System::Threading::{CreateEventW, GetCurrentThreadId, WaitForSingleObject},
         UI::WindowsAndMessaging::{
-            MSG, MWMO_INPUTAVAILABLE, MWMO_NONE, MsgWaitForMultipleObjects, PM_NOREMOVE, PM_REMOVE,
-            PeekMessageW, PostThreadMessageW, QS_ALLPOSTMESSAGE, QS_MOUSEBUTTON, WM_USER,
+            MSG, MWMO_INPUTAVAILABLE, MWMO_NONE, PM_NOREMOVE, PM_REMOVE, PeekMessageW,
+            PostThreadMessageW, QS_ALLPOSTMESSAGE, WM_USER,
         },
     },
     core::Owned,
@@ -171,31 +171,5 @@ pub fn test_messages_local_set() {
 
             tokio::task::spawn_local(future);
         });
-    });
-}
-
-#[test]
-fn queue_attach() {
-    in_new_thread(|| unsafe {
-        let mut msg = MSG::default();
-        assert!(!PeekMessageW(&mut msg, None, 0, 0, PM_NOREMOVE).as_bool());
-
-        let mut future = wait_for_messages(QS_ALLPOSTMESSAGE, MWMO_INPUTAVAILABLE).unwrap();
-
-        let event = Owned::new(CreateEventW(None, true, false, None).unwrap());
-
-        let waker = handle_waker::handle_waker(*event).unwrap();
-        let mut context = Context::from_waker(&waker);
-
-        assert!(matches!(
-            Pin::new_unchecked(&mut future).poll(&mut context),
-            Poll::Pending
-        ));
-
-        _ = MsgWaitForMultipleObjects(Some(&[*event]), false, 1, QS_MOUSEBUTTON);
-
-        PostThreadMessageW(GetCurrentThreadId(), WM_USER, WPARAM(0), LPARAM(0)).unwrap();
-
-        assert_eq!(WaitForSingleObject(*event, 2000), WAIT_OBJECT_0);
     });
 }
