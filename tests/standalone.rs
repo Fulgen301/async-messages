@@ -1,24 +1,18 @@
 use std::{
     future::Future,
-    os::windows::io::AsRawHandle,
     pin::Pin,
     task::{Context, Poll},
 };
 
 use async_messages::*;
-use nt_user_call::functions::NtUserCancelQueueEventCompletionPacket;
 use tokio::task::LocalSet;
 use windows::{
     Win32::{
-        Foundation::{HANDLE, LPARAM, WAIT_OBJECT_0, WAIT_TIMEOUT, WPARAM},
-        System::Threading::{
-            AttachThreadInput, CreateEventW, GetCurrentThreadId, GetThreadId, WaitForSingleObject,
-        },
+        Foundation::{LPARAM, WAIT_OBJECT_0, WPARAM},
+        System::Threading::{CreateEventW, GetCurrentThreadId, WaitForSingleObject},
         UI::WindowsAndMessaging::{
-            DispatchMessageW, GetMessageW, MSG, MWMO_INPUTAVAILABLE, MWMO_NONE,
-            MsgWaitForMultipleObjects, PM_NOREMOVE, PM_REMOVE, PeekMessageW, PostThreadMessageW,
-            QS_ALLPOSTMESSAGE, QS_MOUSEBUTTON, QUEUE_STATUS_FLAGS, TranslateMessage, WM_QUIT,
-            WM_USER, WaitMessage,
+            MSG, MWMO_INPUTAVAILABLE, MWMO_NONE, MsgWaitForMultipleObjects, PM_NOREMOVE, PM_REMOVE,
+            PeekMessageW, PostThreadMessageW, QS_ALLPOSTMESSAGE, QS_MOUSEBUTTON, WM_USER,
         },
     },
     core::Owned,
