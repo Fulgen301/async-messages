@@ -179,6 +179,8 @@ dependencies = [
 [[package]]
 name = "nt-user-call"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f84bb21376bbee39161424c304f6ccea0794e685765c825fbf9171effb3af190"
 dependencies = [
  "paste",
  "windows",
